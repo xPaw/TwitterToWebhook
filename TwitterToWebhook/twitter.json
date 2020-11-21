@@ -1,0 +1,14 @@
+{
+	"AccessToken": "",
+	"AccessSecret": "",
+	"ConsumerKey": "",
+	"ConsumerSecret": "",
+	"AccountsToFollow":
+	{
+		"thexpaw": [ "channel-to-send-to" ],
+	},
+	"WebhookUrls":
+	{
+		"channel-to-send-to": "https://example.com"
+	}
+}
