@@ -149,7 +149,7 @@ namespace TwitterStreaming
             {
                 Url = tweet.Url,
                 Username = tweet.CreatedBy.ScreenName,
-                FullObject = tweet,
+                FullObject = tweet.TweetDTO,
             };
 
             foreach (var hookUrl in TwitterToChannels[tweet.CreatedBy.Id])
