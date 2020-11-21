@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Authors>xPaw</Authors>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/xPaw/TwitterToWebhook</RepositoryUrl>
+    <PackageLicenseUrl>https://github.com/xPaw/TwitterToWebhook/blob/master/LICENSE</PackageLicenseUrl>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="TweetinviAPI" Version="4.0.3" />
+  </ItemGroup>
+</Project>
