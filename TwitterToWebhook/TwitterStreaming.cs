@@ -22,6 +22,7 @@ namespace TwitterStreaming
             public string Type = "NewTweet";
             public string Url;
             public string Username;
+            public string Avatar;
             public object FullObject;
         }
 
@@ -149,6 +150,7 @@ namespace TwitterStreaming
             {
                 Url = tweet.Url,
                 Username = tweet.CreatedBy.ScreenName,
+                Avatar = tweet.CreatedBy.ProfileImageUrl,
                 FullObject = tweet.TweetDTO,
             };
 
