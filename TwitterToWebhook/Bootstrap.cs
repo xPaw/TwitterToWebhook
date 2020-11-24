@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Threading.Tasks;
 
 namespace TwitterStreaming
 {
     static class Bootstrap
     {
-        public static async Task Main()
+        public static void Main()
         {
             var expander = new TwitterStreaming();
-            await expander.StartTwitterStream();
+            expander.StartTwitterStream();
         }
     }
 }

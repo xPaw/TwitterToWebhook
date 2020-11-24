@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Tweetinvi;
@@ -93,14 +94,14 @@ namespace TwitterStreaming
             HttpClient.Timeout = TimeSpan.FromSeconds(10);
         }
 
-        public async Task StartTwitterStream()
+        public void StartTwitterStream()
         {
             TwitterStream.MatchingTweetReceived += OnTweetReceived;
 
             TwitterStream.StallWarnings = true;
             TwitterStream.WarningFallingBehindDetected += (_, args) => Log.WriteWarn("Twitter", $"Stream falling behind: {args.WarningMessage.PercentFull} {args.WarningMessage.Code} {args.WarningMessage.Message}");
 
-            TwitterStream.StreamStopped += async (sender, args) =>
+            TwitterStream.StreamStopped += (sender, args) =>
             {
                 var ex = args.Exception;
                 var twitterDisconnectMessage = args.DisconnectMessage;
@@ -115,11 +116,12 @@ namespace TwitterStreaming
                     Log.WriteError("Twitter", $"Stream stopped: {twitterDisconnectMessage.Code} {twitterDisconnectMessage.Reason}");
                 }
 
-                await Task.Delay(5000);
-                await TwitterStream.StartStreamMatchingAnyConditionAsync();
+                Thread.Sleep(5000);
+                Log.WriteInfo("Twitter", "Restarting stream");
+                TwitterStream.StartStreamMatchingAnyCondition();
             };
 
-            await TwitterStream.StartStreamMatchingAnyConditionAsync();
+            TwitterStream.StartStreamMatchingAnyCondition();
         }
 
         private async void OnTweetReceived(object sender, MatchedTweetReceivedEventArgs matchedTweetReceivedEventArgs)
