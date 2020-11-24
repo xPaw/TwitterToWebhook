@@ -39,7 +39,7 @@ namespace TwitterStreaming
 
             if (!File.Exists(path))
             {
-                Log.WriteWarn("Twitter", "File twitter.json doesn't exist");
+                Log.WriteError("File twitter.json doesn't exist");
 
                 return;
             }
@@ -79,7 +79,7 @@ namespace TwitterStreaming
             {
                 var channels = config.AccountsToFollow.First(u => u.Key.Equals(user.ScreenName, StringComparison.InvariantCultureIgnoreCase));
 
-                Log.WriteInfo("Twitter", $"Following @{user.ScreenName}");
+                Log.WriteInfo($"Following @{user.ScreenName}");
 
                 TwitterToChannels.Add(user.Id, channels.Value.Select(x => config.WebhookUrls[x]).ToList());
 
@@ -99,7 +99,7 @@ namespace TwitterStreaming
             TwitterStream.MatchingTweetReceived += OnTweetReceived;
 
             TwitterStream.StallWarnings = true;
-            TwitterStream.WarningFallingBehindDetected += (_, args) => Log.WriteWarn("Twitter", $"Stream falling behind: {args.WarningMessage.PercentFull} {args.WarningMessage.Code} {args.WarningMessage.Message}");
+            TwitterStream.WarningFallingBehindDetected += (_, args) => Log.WriteWarn($"Stream falling behind: {args.WarningMessage.PercentFull} {args.WarningMessage.Code} {args.WarningMessage.Message}");
 
             TwitterStream.StreamStopped += (sender, args) =>
             {
@@ -108,16 +108,16 @@ namespace TwitterStreaming
 
                 if (ex != null)
                 {
-                    Log.WriteError("Twitter", ex.ToString());
+                    Log.WriteError(ex.ToString());
                 }
 
                 if (twitterDisconnectMessage != null)
                 {
-                    Log.WriteError("Twitter", $"Stream stopped: {twitterDisconnectMessage.Code} {twitterDisconnectMessage.Reason}");
+                    Log.WriteError($"Stream stopped: {twitterDisconnectMessage.Code} {twitterDisconnectMessage.Reason}");
                 }
 
                 Thread.Sleep(5000);
-                Log.WriteInfo("Twitter", "Restarting stream");
+                Log.WriteInfo("Restarting stream");
                 TwitterStream.StartStreamMatchingAnyCondition();
             };
 
@@ -131,7 +131,7 @@ namespace TwitterStreaming
             // Skip replies
             if (tweet.InReplyToUserId != null && !TwitterToChannels.ContainsKey(tweet.InReplyToUserId.GetValueOrDefault()))
             {
-                Log.WriteInfo("Twitter", $"@{tweet.CreatedBy.ScreenName} replied to @{tweet.InReplyToScreenName}");
+                Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} replied to @{tweet.InReplyToScreenName}");
                 return;
             }
 
@@ -142,11 +142,11 @@ namespace TwitterStreaming
 
             if (tweet.RetweetedTweet != null && TwitterToChannels.ContainsKey(tweet.RetweetedTweet.CreatedBy.Id))
             {
-                Log.WriteInfo("Twitter", $"@{tweet.CreatedBy.ScreenName} retweeted @{tweet.RetweetedTweet.CreatedBy.ScreenName}");
+                Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} retweeted @{tweet.RetweetedTweet.CreatedBy.ScreenName}");
                 return;
             }
 
-            Log.WriteInfo("Twitter", $"Streamed {tweet.Url}: {tweet.FullText}");
+            Log.WriteInfo($"Streamed {tweet.Url}: {tweet.FullText}");
 
             var payload = new HookTweetObject
             {
@@ -172,11 +172,11 @@ namespace TwitterStreaming
                 var result = await HttpClient.PostAsync(url, content);
                 var output = await result.Content.ReadAsStringAsync();
 
-                Log.WriteInfo("Webhook", $"Result: {output}");
+                Log.WriteInfo($"Webhook result: {output}");
             }
             catch (Exception e)
             {
-                Log.WriteError("Webhook", e.ToString());
+                Log.WriteError($"Webhook exception: {e}");
             }
         }
     }
