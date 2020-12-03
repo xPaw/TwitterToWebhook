@@ -29,12 +29,14 @@ namespace TwitterStreaming
         }
 
         private readonly Dictionary<long, List<string>> TwitterToChannels;
+        private readonly HashSet<long> AccountsToIgnoreRepliesFrom;
         private readonly IFilteredStream TwitterStream;
         private readonly HttpClient HttpClient;
 
         public TwitterStreaming()
         {
             TwitterToChannels = new Dictionary<long, List<string>>();
+            AccountsToIgnoreRepliesFrom = new HashSet<long>();
 
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "twitter.json");
 
@@ -84,6 +86,11 @@ namespace TwitterStreaming
 
                 TwitterToChannels.Add(user.Id, channels.Value.Select(x => config.WebhookUrls[x]).ToList());
 
+                if (config.IgnoreReplies.Contains(user.ScreenName, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    AccountsToIgnoreRepliesFrom.Add(user.Id);
+                }
+
                 TwitterStream.AddFollow(user);
             }
 
@@ -130,7 +137,7 @@ namespace TwitterStreaming
             var tweet = matchedTweetReceivedEventArgs.Tweet;
 
             // Skip replies
-            if (tweet.InReplyToUserId != null && !TwitterToChannels.ContainsKey(tweet.InReplyToUserId.GetValueOrDefault()))
+            if (tweet.InReplyToUserId != null && AccountsToIgnoreRepliesFrom.Contains(tweet.CreatedBy.Id) && !TwitterToChannels.ContainsKey(tweet.InReplyToUserId.GetValueOrDefault()))
             {
                 Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} replied to @{tweet.InReplyToScreenName}: {tweet.Url}");
                 return;

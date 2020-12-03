@@ -22,6 +22,9 @@ namespace TwitterStreaming
         public Dictionary<string, List<string>> AccountsToFollow { get; set; }
 
         [JsonProperty(Required = Required.Always)]
+        public HashSet<string> IgnoreReplies { get; set; }
+
+        [JsonProperty(Required = Required.Always)]
         public Dictionary<string, string> WebhookUrls { get; set; }
     }
 }
