@@ -131,7 +131,7 @@ namespace TwitterStreaming
             // Skip replies
             if (tweet.InReplyToUserId != null && !TwitterToChannels.ContainsKey(tweet.InReplyToUserId.GetValueOrDefault()))
             {
-                Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} replied to @{tweet.InReplyToScreenName}");
+                Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} replied to @{tweet.InReplyToScreenName}: {tweet.Url}");
                 return;
             }
 
@@ -142,7 +142,7 @@ namespace TwitterStreaming
 
             if (tweet.RetweetedTweet != null && TwitterToChannels.ContainsKey(tweet.RetweetedTweet.CreatedBy.Id))
             {
-                Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} retweeted @{tweet.RetweetedTweet.CreatedBy.ScreenName}");
+                Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} retweeted @{tweet.RetweetedTweet.CreatedBy.ScreenName}: {tweet.Url}");
                 return;
             }
 
