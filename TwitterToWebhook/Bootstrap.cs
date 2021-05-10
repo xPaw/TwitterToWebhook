@@ -8,6 +8,7 @@ namespace TwitterStreaming
         public static async Task Main()
         {
             var expander = new TwitterStreaming();
+            await expander.Initialize();
             await expander.StartTwitterStream();
         }
     }

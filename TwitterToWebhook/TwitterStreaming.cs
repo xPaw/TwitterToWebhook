@@ -29,21 +29,24 @@ namespace TwitterStreaming
 
         private readonly Dictionary<long, List<Uri>> TwitterToChannels = new();
         private readonly HashSet<long> AccountsToIgnoreRepliesFrom = new();
-        private readonly IFilteredStream TwitterStream;
         private readonly HttpClient HttpClient;
+        private IFilteredStream TwitterStream;
 
         public TwitterStreaming()
         {
+            HttpClient = new HttpClient(new HttpClientHandler
+            {
+                AllowAutoRedirect = false,
+            });
+            HttpClient.DefaultRequestHeaders.Add("User-Agent", "TwitterToWebhook");
+            HttpClient.Timeout = TimeSpan.FromSeconds(10);
+        }
+
+        public async Task Initialize()
+        {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "twitter.json");
 
-            if (!File.Exists(path))
-            {
-                Log.WriteError("File twitter.json doesn't exist");
-
-                return;
-            }
-
-            var config = JsonSerializer.Deserialize<TwitterConfig>(File.ReadAllText(path), new JsonSerializerOptions
+            var config = JsonSerializer.Deserialize<TwitterConfig>(await File.ReadAllTextAsync(path), new JsonSerializerOptions
             {
                 ReadCommentHandling = JsonCommentHandling.Skip,
                 AllowTrailingCommas = true,
@@ -64,7 +67,7 @@ namespace TwitterStreaming
                 }
             }
 
-            var twitterUsers = userClient.Users.GetUsersAsync(config.AccountsToFollow.Keys).GetAwaiter().GetResult();
+            var twitterUsers = await userClient.Users.GetUsersAsync(config.AccountsToFollow.Keys);
 
             foreach (var user in twitterUsers)
             {
@@ -81,13 +84,6 @@ namespace TwitterStreaming
 
                 TwitterStream.AddFollow(user);
             }
-
-            HttpClient = new HttpClient(new HttpClientHandler
-            {
-                AllowAutoRedirect = false,
-            });
-            HttpClient.DefaultRequestHeaders.Add("User-Agent", "TwitterToWebhook");
-            HttpClient.Timeout = TimeSpan.FromSeconds(10);
         }
 
         public async Task StartTwitterStream()
@@ -124,15 +120,18 @@ namespace TwitterStreaming
         {
             var tweet = matchedTweetReceivedEventArgs.Tweet;
 
+            if (!TwitterToChannels.ContainsKey(tweet.CreatedBy.Id))
+            {
+#if DEBUG
+                Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} (skipped): {tweet.Url}");
+#endif
+                return;
+            }
+
             // Skip replies
             if (tweet.InReplyToUserId != null && AccountsToIgnoreRepliesFrom.Contains(tweet.CreatedBy.Id) && !TwitterToChannels.ContainsKey(tweet.InReplyToUserId.GetValueOrDefault()))
             {
                 Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} replied to @{tweet.InReplyToScreenName}: {tweet.Url}");
-                return;
-            }
-
-            if (!TwitterToChannels.ContainsKey(tweet.CreatedBy.Id))
-            {
                 return;
             }
 
