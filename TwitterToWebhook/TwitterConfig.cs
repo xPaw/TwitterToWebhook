@@ -25,6 +25,6 @@ namespace TwitterStreaming
         public HashSet<string> IgnoreReplies { get; set; }
 
         [JsonProperty(Required = Required.Always)]
-        public Dictionary<string, string> WebhookUrls { get; set; }
+        public Dictionary<string, Uri> WebhookUrls { get; set; }
     }
 }

@@ -28,16 +28,13 @@ namespace TwitterStreaming
             public object FullObject;
         }
 
-        private readonly Dictionary<long, List<string>> TwitterToChannels;
-        private readonly HashSet<long> AccountsToIgnoreRepliesFrom;
+        private readonly Dictionary<long, List<Uri>> TwitterToChannels = new();
+        private readonly HashSet<long> AccountsToIgnoreRepliesFrom = new();
         private readonly IFilteredStream TwitterStream;
         private readonly HttpClient HttpClient;
 
         public TwitterStreaming()
         {
-            TwitterToChannels = new Dictionary<long, List<string>>();
-            AccountsToIgnoreRepliesFrom = new HashSet<long>();
-
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "twitter.json");
 
             if (!File.Exists(path))
@@ -71,7 +68,7 @@ namespace TwitterStreaming
                 {
                     if (!config.WebhookUrls.ContainsKey(channel))
                     {
-                        throw new Exception($"Channel \"{channel}\" does not exist in WebhookUrls.");
+                        throw new KeyNotFoundException($"Channel \"{channel}\" does not exist in WebhookUrls.");
                     }
                 }
             }
@@ -80,7 +77,7 @@ namespace TwitterStreaming
 
             foreach (var user in twitterUsers)
             {
-                var channels = config.AccountsToFollow.First(u => u.Key.Equals(user.ScreenName, StringComparison.InvariantCultureIgnoreCase));
+                var channels = config.AccountsToFollow.First(u => u.Key.Equals(user.ScreenName, StringComparison.OrdinalIgnoreCase));
 
                 Log.WriteInfo($"Following @{user.ScreenName}");
 
@@ -171,10 +168,10 @@ namespace TwitterStreaming
             }
         }
 
-        private async Task SendWebhook(string url, HookTweetObject payload)
+        private async Task SendWebhook(Uri url, HookTweetObject payload)
         {
             var json = JsonConvert.SerializeObject(payload);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             try
             {
