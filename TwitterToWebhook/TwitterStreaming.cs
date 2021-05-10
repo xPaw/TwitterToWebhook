@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Tweetinvi;
 using Tweetinvi.Events;
-using Tweetinvi.Models;
 using Tweetinvi.Streaming;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -50,17 +49,9 @@ namespace TwitterStreaming
                 AllowTrailingCommas = true,
             });
 
-            //TweetinviConfig.ApplicationSettings.TweetMode = TweetMode.Extended;
-
-            // lul per thread or application credentials
-            Auth.ApplicationCredentials = new TwitterCredentials(
-                config.ConsumerKey,
-                config.ConsumerSecret,
-                config.AccessToken,
-                config.AccessSecret
-            );
+            var userClient = new TwitterClient(config.ConsumerKey, config.ConsumerSecret, config.AccessToken, config.AccessSecret);
             
-            TwitterStream = Tweetinvi.Stream.CreateFilteredStream();
+            TwitterStream = userClient.Streams.CreateFilteredStream();
 
             foreach (var (_, channels) in config.AccountsToFollow)
             {
@@ -73,7 +64,7 @@ namespace TwitterStreaming
                 }
             }
 
-            var twitterUsers = User.GetUsersFromScreenNames(config.AccountsToFollow.Keys);
+            var twitterUsers = userClient.Users.GetUsersAsync(config.AccountsToFollow.Keys).GetAwaiter().GetResult();
 
             foreach (var user in twitterUsers)
             {
@@ -99,14 +90,14 @@ namespace TwitterStreaming
             HttpClient.Timeout = TimeSpan.FromSeconds(10);
         }
 
-        public void StartTwitterStream()
+        public async Task StartTwitterStream()
         {
             TwitterStream.MatchingTweetReceived += OnTweetReceived;
 
             TwitterStream.StallWarnings = true;
             TwitterStream.WarningFallingBehindDetected += (_, args) => Log.WriteWarn($"Stream falling behind: {args.WarningMessage.PercentFull} {args.WarningMessage.Code} {args.WarningMessage.Message}");
 
-            TwitterStream.StreamStopped += (sender, args) =>
+            TwitterStream.StreamStopped += async (sender, args) =>
             {
                 var ex = args.Exception;
                 var twitterDisconnectMessage = args.DisconnectMessage;
@@ -123,10 +114,10 @@ namespace TwitterStreaming
 
                 Thread.Sleep(5000);
                 Log.WriteInfo("Restarting stream");
-                TwitterStream.StartStreamMatchingAnyCondition();
+                await TwitterStream.StartMatchingAnyConditionAsync();
             };
 
-            TwitterStream.StartStreamMatchingAnyCondition();
+            await TwitterStream.StartMatchingAnyConditionAsync();
         }
 
         private async void OnTweetReceived(object sender, MatchedTweetReceivedEventArgs matchedTweetReceivedEventArgs)
