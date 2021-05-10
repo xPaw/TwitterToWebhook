@@ -141,7 +141,7 @@ namespace TwitterStreaming
                 return;
             }
 
-            Log.WriteInfo($"Streamed {tweet.Url}: {tweet.FullText}");
+            Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} tweeted: {tweet.Url}");
 
             var payload = new HookTweetObject
             {
