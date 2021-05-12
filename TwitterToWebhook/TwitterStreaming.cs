@@ -17,16 +17,6 @@ namespace TwitterStreaming
 {
     class TwitterStreaming
     {
-        class HookTweetObject
-        {
-            public string Type = "NewTweet";
-            public string Url;
-            public string Username;
-            public string Avatar;
-            public bool IsRetweet;
-            public object FullObject;
-        }
-
         private readonly Dictionary<long, List<Uri>> TwitterToChannels = new();
         private readonly HashSet<long> AccountsToIgnoreRepliesFrom = new();
         private readonly HttpClient HttpClient;
@@ -148,7 +138,6 @@ namespace TwitterStreaming
                 Url = tweet.Url,
                 Username = tweet.CreatedBy.ScreenName,
                 Avatar = tweet.CreatedBy.ProfileImageUrl,
-                IsRetweet = tweet.Retweeted,
                 FullObject = tweet.TweetDTO,
             };
 
