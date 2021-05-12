@@ -100,7 +100,17 @@ namespace TwitterStreaming
                 await TwitterStream.StartMatchingAnyConditionAsync();
             };
 
-            await TwitterStream.StartMatchingAnyConditionAsync();
+            while (true)
+            {
+                try
+                {
+                    await TwitterStream.StartMatchingAnyConditionAsync();
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteError(ex.ToString());
+                }
+            }
         }
 
         private async void OnTweetReceived(object sender, MatchedTweetReceivedEventArgs matchedTweetReceivedEventArgs)
@@ -166,7 +176,7 @@ namespace TwitterStreaming
                 var result = await HttpClient.PostAsync(url, content);
                 var output = await result.Content.ReadAsStringAsync();
 
-                Log.WriteInfo($"Webhook result ({result.StatusCode}): {output}");
+                Log.WriteInfo($"Webhook result ({(int)result.StatusCode}): {output}");
             }
             catch (Exception e)
             {
