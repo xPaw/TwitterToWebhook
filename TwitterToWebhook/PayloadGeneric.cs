@@ -2,7 +2,7 @@
 
 namespace TwitterStreaming
 {
-    class HookTweetObject
+    class PayloadGeneric
     {
         public string Type = "NewTweet";
         public string Url;

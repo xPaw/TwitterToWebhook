@@ -133,7 +133,7 @@ namespace TwitterStreaming
 
             Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} tweeted: {tweet.Url}");
 
-            var payload = new HookTweetObject
+            var payload = new PayloadGeneric
             {
                 Url = tweet.Url,
                 Username = tweet.CreatedBy.ScreenName,
@@ -147,9 +147,20 @@ namespace TwitterStreaming
             }
         }
 
-        private async Task SendWebhook(Uri url, HookTweetObject payload)
+        private async Task SendWebhook(Uri url, PayloadGeneric payload)
         {
-            var json = JsonConvert.SerializeObject(payload);
+            string json;
+
+            if (url.Host == "discord.com")
+            {
+                // If webhook target is Discord, convert it to a Discord compatible payload
+                json = JsonConvert.SerializeObject(new PayloadDiscord(payload));
+            }
+            else
+            {
+                json = JsonConvert.SerializeObject(payload);
+            }
+
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             try
