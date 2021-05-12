@@ -166,7 +166,7 @@ namespace TwitterStreaming
                 var result = await HttpClient.PostAsync(url, content);
                 var output = await result.Content.ReadAsStringAsync();
 
-                Log.WriteInfo($"Webhook result: {output}");
+                Log.WriteInfo($"Webhook result ({result.StatusCode}): {output}");
             }
             catch (Exception e)
             {
