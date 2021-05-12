@@ -6,13 +6,13 @@ namespace TwitterStreaming
     class PayloadDiscord
     {
         [JsonProperty("username")]
-        public string Username;
+        public string Username { get; }
 
         [JsonProperty("avatar_url")]
-        public string Avatar;
+        public string Avatar { get; }
 
         [JsonProperty("content")]
-        public string Content;
+        public string Content { get; }
 
         public PayloadDiscord(PayloadGeneric payload)
         {
