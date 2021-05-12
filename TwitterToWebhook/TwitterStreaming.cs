@@ -80,10 +80,6 @@ namespace TwitterStreaming
         public async Task StartTwitterStream()
         {
             TwitterStream.MatchingTweetReceived += OnTweetReceived;
-
-            TwitterStream.StallWarnings = true;
-            TwitterStream.WarningFallingBehindDetected += (_, args) => Log.WriteWarn($"Stream falling behind: {args.WarningMessage.PercentFull} {args.WarningMessage.Code} {args.WarningMessage.Message}");
-
             TwitterStream.StreamStopped += async (sender, args) =>
             {
                 var ex = args.Exception;
