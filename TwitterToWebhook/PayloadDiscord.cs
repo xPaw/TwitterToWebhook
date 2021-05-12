@@ -12,7 +12,7 @@ namespace TwitterStreaming
         public string Avatar;
 
         [JsonProperty("content")]
-        public object Content;
+        public string Content;
 
         public PayloadDiscord(PayloadGeneric payload)
         {
