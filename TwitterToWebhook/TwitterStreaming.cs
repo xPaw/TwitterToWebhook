@@ -100,17 +100,7 @@ namespace TwitterStreaming
                 await TwitterStream.StartMatchingAnyConditionAsync();
             };
 
-            while (true)
-            {
-                try
-                {
-                    await TwitterStream.StartMatchingAnyConditionAsync();
-                }
-                catch (Exception ex)
-                {
-                    Log.WriteError(ex.ToString());
-                }
-            }
+            await TwitterStream.StartMatchingAnyConditionAsync();
         }
 
         private async void OnTweetReceived(object sender, MatchedTweetReceivedEventArgs matchedTweetReceivedEventArgs)
