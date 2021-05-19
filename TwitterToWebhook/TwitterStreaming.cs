@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using Tweetinvi;
 using Tweetinvi.Events;
 using Tweetinvi.Streaming;
+using Tweetinvi.Streams;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace TwitterStreaming
@@ -44,7 +45,7 @@ namespace TwitterStreaming
             });
 
             var userClient = new TwitterClient(config.ConsumerKey, config.ConsumerSecret, config.AccessToken, config.AccessSecret);
-            
+
             TwitterStream = userClient.Streams.CreateFilteredStream();
 
             foreach (var (_, channels) in config.AccountsToFollow)
@@ -80,27 +81,43 @@ namespace TwitterStreaming
         public async Task StartTwitterStream()
         {
             TwitterStream.MatchingTweetReceived += OnTweetReceived;
-            TwitterStream.StreamStopped += async (sender, args) =>
+            TwitterStream.StreamStopped += (sender, args) =>
             {
                 var ex = args.Exception;
                 var twitterDisconnectMessage = args.DisconnectMessage;
-
-                if (ex != null)
-                {
-                    Log.WriteError(ex.ToString());
-                }
 
                 if (twitterDisconnectMessage != null)
                 {
                     Log.WriteError($"Stream stopped: {twitterDisconnectMessage.Code} {twitterDisconnectMessage.Reason}");
                 }
 
-                Thread.Sleep(5000);
-                Log.WriteInfo("Restarting stream");
-                await TwitterStream.StartMatchingAnyConditionAsync();
+                if (ex != null)
+                {
+                    Log.WriteError($"Stream stopped exception: {ex}");
+                }
             };
+            
+            do
+            {
+                try
+                {
+                    Log.WriteInfo("Connecting to stream");
+                    await TwitterStream.StartMatchingAnyConditionAsync();
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteError($"Exception caught: {ex}");
 
-            await TwitterStream.StartMatchingAnyConditionAsync();
+                    if (TwitterStream.StreamState != StreamState.Stop)
+                    {
+                        Log.WriteInfo("Stream is not stopped, stopping");
+                        TwitterStream.Stop();
+                    }
+
+                    await Task.Delay(5000);
+                }
+            }
+            while (true);
         }
 
         private async void OnTweetReceived(object sender, MatchedTweetReceivedEventArgs matchedTweetReceivedEventArgs)

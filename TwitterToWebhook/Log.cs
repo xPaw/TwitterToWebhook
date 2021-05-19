@@ -8,14 +8,12 @@ namespace TwitterStreaming
         private enum Category
         {
             INFO,
-            WARN,
             ERROR
         }
 
-        private static readonly object logLock = new object();
+        private static readonly object logLock = new();
 
         public static void WriteInfo(string format) => WriteLine(Category.INFO, format);
-        public static void WriteWarn(string format) => WriteLine(Category.WARN, format);
         public static void WriteError(string format) => WriteLine(Category.ERROR, format);
 
         private static void WriteLine(Category category, string format)
@@ -27,12 +25,6 @@ namespace TwitterStreaming
                 if (category == Category.ERROR)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Write(logLine);
-                    Console.ResetColor();
-                }
-                else if (category == Category.WARN)
-                {
-                    Console.ForegroundColor = ConsoleColor.Blue;
                     Console.Write(logLine);
                     Console.ResetColor();
                 }
