@@ -6,18 +6,16 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Tweetinvi;
 using Tweetinvi.Events;
 using Tweetinvi.Streaming;
-using Tweetinvi.Streams;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace TwitterStreaming
 {
-    class TwitterStreaming
+    class TwitterStreaming : IDisposable
     {
         private readonly Dictionary<long, List<Uri>> TwitterToChannels = new();
         private readonly HashSet<long> AccountsToIgnoreRepliesFrom = new();
@@ -32,6 +30,11 @@ namespace TwitterStreaming
             });
             HttpClient.DefaultRequestHeaders.Add("User-Agent", "TwitterToWebhook");
             HttpClient.Timeout = TimeSpan.FromSeconds(10);
+        }
+
+        public void Dispose()
+        {
+            HttpClient?.Dispose();
         }
 
         public async Task Initialize()
