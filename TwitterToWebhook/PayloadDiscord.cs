@@ -28,18 +28,31 @@ namespace TwitterStreaming
         [JsonProperty("embeds")]
         public List<object> Embeds { get; } = new();
 
-        public PayloadDiscord(PayloadGeneric payload)
+        public PayloadDiscord(ITweet tweet)
         {
-            Username = $"@{payload.Username}";
-            Avatar = payload.Avatar;
+            if (tweet.RetweetedTweet != null)
+            {
+                Username = $"@{tweet.RetweetedTweet.CreatedBy.ScreenName} (RT by @{tweet.CreatedBy.ScreenName})";
+
+                tweet = tweet.RetweetedTweet;
+            }
+            else
+            {
+                Username = $"@{tweet.CreatedBy.ScreenName}";
+            }
+
+            Avatar = tweet.CreatedBy.ProfileImageUrl;
 
             // TODO: Escape markdown
-            FormatTweet(payload.Tweet);
+            FormatTweet(tweet);
 
-            Content = $"[Tweet:](<{payload.Url}>) {Content}";
+            if (tweet.QuotedTweet != null)
+            {
+                FormatTweet(tweet.QuotedTweet, true);
+            }
         }
 
-        private void FormatTweet(ITweet tweet)
+        private void FormatTweet(ITweet tweet, bool embed = false)
         {
             var text = tweet.FullText;
             var entities = new List<EntityContainer>();
@@ -92,54 +105,70 @@ namespace TwitterStreaming
                 }
             }
 
-            if (!entities.Any())
+            if (entities.Any())
             {
-                Content = WebUtility.HtmlDecode(text);
-                return;
-            }
+                entities = entities.OrderBy(e => e.Start).ToList();
 
-            entities = entities.OrderBy(e => e.Start).ToList();
+                var charIndex = 0;
+                var entityIndex = 0;
+                var codePointIndex = 0;
+                var entityCurrent = entities[0];
 
-            var charIndex = 0;
-            var entityIndex = 0;
-            var codePointIndex = 0;
-            var entityCurrent = entities[0];
-
-            while (charIndex < text.Length)
-            {
-                if (entityCurrent.Start == codePointIndex)
+                while (charIndex < text.Length)
                 {
-                    var len = entityCurrent.End - entityCurrent.Start;
-                    entityCurrent.Start = charIndex;
-                    entityCurrent.End = charIndex + len;
-
-                    entityIndex++;
-
-                    if (entityIndex == entities.Count)
+                    if (entityCurrent.Start == codePointIndex)
                     {
-                        // no more entity
-                        break;
+                        var len = entityCurrent.End - entityCurrent.Start;
+                        entityCurrent.Start = charIndex;
+                        entityCurrent.End = charIndex + len;
+
+                        entityIndex++;
+
+                        if (entityIndex == entities.Count)
+                        {
+                            // no more entity
+                            break;
+                        }
+
+                        entityCurrent = entities[entityIndex];
                     }
 
-                    entityCurrent = entities[entityIndex];
-                }
+                    if (charIndex < text.Length - 1 && char.IsSurrogatePair(text[charIndex], text[charIndex + 1]))
+                    {
+                        // Found surrogate pair
+                        charIndex++;
+                    }
 
-                if (charIndex < text.Length - 1 && char.IsSurrogatePair(text[charIndex], text[charIndex + 1]))
-                {
-                    // Found surrogate pair
+                    codePointIndex++;
                     charIndex++;
                 }
 
-                codePointIndex++;
-                charIndex++;
+                foreach (var entity in entities.OrderByDescending(e => e.Start))
+                {
+                    text = text[..entity.Start] + entity.Replacement + text[entity.End..];
+                }
             }
 
-            foreach (var entity in entities.OrderByDescending(e => e.Start))
+            text = WebUtility.HtmlDecode(text);
+
+            if (embed)
             {
-                text = text[..entity.Start] + entity.Replacement + text[entity.End..];
+                Embeds.Insert(0, new
+                {
+                    url = tweet.Url,
+                    color = 1941746,
+                    description = text,
+                    author = new
+                    {
+                        name = $"@{tweet.CreatedBy.ScreenName}",
+                        icon_url = tweet.CreatedBy.ProfileImageUrl,
+                    },
+                });
             }
-
-            Content = WebUtility.HtmlDecode(text);
+            else
+            {
+                Content = $"[Tweet:](<{tweet.Url}>) {text}";
+            }
         }
     }
 }

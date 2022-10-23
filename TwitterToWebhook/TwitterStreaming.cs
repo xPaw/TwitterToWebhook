@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Tweetinvi;
 using Tweetinvi.Events;
+using Tweetinvi.Models;
 using Tweetinvi.Streaming;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -150,33 +151,24 @@ namespace TwitterStreaming
 
             Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} tweeted: {tweet.Url}");
 
-            var payload = new PayloadGeneric
-            {
-                Url = tweet.Url,
-                Username = tweet.CreatedBy.ScreenName,
-                Avatar = tweet.CreatedBy.ProfileImageUrl,
-                FullObject = tweet.TweetDTO,
-                Tweet = tweet,
-            };
-
             foreach (var hookUrl in TwitterToChannels[tweet.CreatedBy.Id])
             {
-                await SendWebhook(hookUrl, payload);
+                await SendWebhook(hookUrl, tweet);
             }
         }
 
-        private async Task SendWebhook(Uri url, PayloadGeneric payload)
+        private async Task SendWebhook(Uri url, ITweet tweet)
         {
             string json;
 
             if (url.Host == "discord.com")
             {
                 // If webhook target is Discord, convert it to a Discord compatible payload
-                json = JsonConvert.SerializeObject(new PayloadDiscord(payload));
+                json = JsonConvert.SerializeObject(new PayloadDiscord(tweet));
             }
             else
             {
-                json = JsonConvert.SerializeObject(payload);
+                json = JsonConvert.SerializeObject(new PayloadGeneric(tweet));
             }
 
             using var content = new StringContent(json, Encoding.UTF8, "application/json");

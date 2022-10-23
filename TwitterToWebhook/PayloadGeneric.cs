@@ -1,6 +1,4 @@
-﻿using System;
-using Newtonsoft.Json;
-using Tweetinvi.Models;
+﻿using Tweetinvi.Models;
 
 namespace TwitterStreaming
 {
@@ -12,7 +10,12 @@ namespace TwitterStreaming
         public string Avatar { get; init; }
         public object FullObject { get; init; }
 
-        [JsonIgnore]
-        public ITweet Tweet;
+        public PayloadGeneric(ITweet tweet)
+        {
+            Url = tweet.Url;
+            Username = tweet.CreatedBy.ScreenName;
+            Avatar = tweet.CreatedBy.ProfileImageUrl;
+            FullObject = tweet.TweetDTO;
+        }
     }
 }
