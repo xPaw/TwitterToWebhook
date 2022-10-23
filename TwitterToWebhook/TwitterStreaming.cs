@@ -100,7 +100,7 @@ namespace TwitterStreaming
                     Log.WriteError($"Stream stopped exception: {ex}");
                 }
             };
-            
+
             do
             {
                 try
@@ -128,7 +128,8 @@ namespace TwitterStreaming
         {
             var tweet = matchedTweetReceivedEventArgs.Tweet;
 
-            if (!TwitterToChannels.ContainsKey(tweet.CreatedBy.Id))
+            // Skip tweets from unmounted accounts (quirk of how twitter streaming works)
+            if (!TwitterToChannels.TryGetValue(tweet.CreatedBy.Id, out var endpoints))
             {
 #if DEBUG
                 Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} (skipped): {tweet.Url}");
@@ -136,22 +137,28 @@ namespace TwitterStreaming
                 return;
             }
 
-            // Skip replies
+            // Skip replies unless replying to another monitored account
             if (tweet.InReplyToUserId != null && AccountsToIgnoreRepliesFrom.Contains(tweet.CreatedBy.Id) && !TwitterToChannels.ContainsKey(tweet.InReplyToUserId.GetValueOrDefault()))
             {
                 Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} replied to @{tweet.InReplyToScreenName}: {tweet.Url}");
                 return;
             }
 
-            if (tweet.RetweetedTweet != null && TwitterToChannels.ContainsKey(tweet.RetweetedTweet.CreatedBy.Id))
+            // When retweeting a monitored account, do not send retweets to channels that original tweeter also sends to
+            if (tweet.RetweetedTweet != null && TwitterToChannels.TryGetValue(tweet.RetweetedTweet.CreatedBy.Id, out var retweetEndpoints))
             {
-                Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} retweeted @{tweet.RetweetedTweet.CreatedBy.ScreenName}: {tweet.Url}");
-                return;
+                endpoints = endpoints.Except(retweetEndpoints).ToList();
+
+                if (!endpoints.Any())
+                {
+                    Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} retweeted @{tweet.RetweetedTweet.CreatedBy.ScreenName}: {tweet.Url}");
+                    return;
+                }
             }
 
             Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} tweeted: {tweet.Url}");
 
-            foreach (var hookUrl in TwitterToChannels[tweet.CreatedBy.Id])
+            foreach (var hookUrl in endpoints)
             {
                 await SendWebhook(hookUrl, tweet);
             }
