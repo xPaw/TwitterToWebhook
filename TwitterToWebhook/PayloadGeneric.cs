@@ -1,4 +1,6 @@
 ﻿using System;
+using Newtonsoft.Json;
+using Tweetinvi.Models;
 
 namespace TwitterStreaming
 {
@@ -9,5 +11,8 @@ namespace TwitterStreaming
         public string Username { get; init; }
         public string Avatar { get; init; }
         public object FullObject { get; init; }
+
+        [JsonIgnore]
+        public ITweet Tweet;
     }
 }

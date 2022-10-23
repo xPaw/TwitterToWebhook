@@ -156,6 +156,7 @@ namespace TwitterStreaming
                 Username = tweet.CreatedBy.ScreenName,
                 Avatar = tweet.CreatedBy.ProfileImageUrl,
                 FullObject = tweet.TweetDTO,
+                Tweet = tweet,
             };
 
             foreach (var hookUrl in TwitterToChannels[tweet.CreatedBy.Id])
