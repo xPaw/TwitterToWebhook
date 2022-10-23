@@ -128,7 +128,7 @@ namespace TwitterStreaming
         {
             var tweet = matchedTweetReceivedEventArgs.Tweet;
 
-            // Skip tweets from unmounted accounts (quirk of how twitter streaming works)
+            // Skip tweets from accounts that are not monitored (quirk of how twitter streaming works)
             if (!TwitterToChannels.TryGetValue(tweet.CreatedBy.Id, out var endpoints))
             {
 #if DEBUG
