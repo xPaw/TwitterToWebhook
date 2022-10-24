@@ -75,6 +75,22 @@ namespace TwitterStreaming
                 }
             }
 
+            if (tweet.Entities.UserMentions != null)
+            {
+                foreach (var entity in tweet.Entities.UserMentions)
+                {
+                    if (!entities.Exists(x => x.Start == entity.Indices[0]))
+                    {
+                        entities.Add(new EntityContainer
+                        {
+                            Start = entity.Indices[0],
+                            End = entity.Indices[1],
+                            Replacement = $"[@{entity.ScreenName}](https://twitter.com/{entity.ScreenName})"
+                        });
+                    }
+                }
+            }
+
             if (tweet.Entities?.Medias != null)
             {
                 foreach (var entity in tweet.Entities.Medias)
