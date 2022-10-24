@@ -16,6 +16,27 @@ namespace TwitterStreaming
             public string Replacement { get; set; }
         }
 
+        public class Embed
+        {
+            public class Author
+            {
+                public string name { get; set; }
+                public string icon_url { get; set; }
+                public string url { get; set; }
+            }
+
+            public class Image
+            {
+                public string url { get; set; }
+            }
+
+            public string url { get; set; }
+            public int color { get; set; }
+            public string description { get; set; }
+            public Author author { get; set; }
+            public Image image { get; set; }
+        }
+
         [JsonProperty("username")]
         public string Username { get; }
 
@@ -26,38 +47,47 @@ namespace TwitterStreaming
         public string Content { get; private set; }
 
         [JsonProperty("embeds")]
-        public List<object> Embeds { get; } = new();
+        public List<Embed> Embeds { get; } = new();
 
         public PayloadDiscord(ITweet tweet)
+        {
+            Username = "New Tweet";
+
+            if (tweet.RetweetedTweet != null)
+            {
+                Avatar = tweet.RetweetedTweet.CreatedBy.ProfileImageUrl;
+            }
+            else
+            {
+                Avatar = tweet.CreatedBy.ProfileImageUrl;
+            }
+
+            // TODO: Escape markdown
+            FormatTweet(tweet);
+
+            if (tweet.QuotedTweet != null)
+            {
+                FormatTweet(tweet.QuotedTweet);
+            }
+        }
+
+        private void FormatTweet(ITweet tweet)
         {
             string author;
 
             if (tweet.RetweetedTweet != null)
             {
-                author = $"@{tweet.RetweetedTweet.CreatedBy.ScreenName} (RT by @{tweet.CreatedBy.ScreenName})";
+                author = $"{tweet.RetweetedTweet.CreatedBy.Name} (@{tweet.RetweetedTweet.CreatedBy.ScreenName}) (@{tweet.CreatedBy.ScreenName} retweeted)";
                 tweet = tweet.RetweetedTweet;
             }
             else
             {
-                author = $"@{tweet.CreatedBy.ScreenName}";
+                author = $"{tweet.CreatedBy.Name} (@{tweet.CreatedBy.ScreenName})";
             }
 
-            Username = "New Tweet";
-            Avatar = tweet.CreatedBy.ProfileImageUrl;
-
-            // TODO: Escape markdown
-            FormatTweet(tweet, author);
-
-            if (tweet.QuotedTweet != null)
-            {
-                FormatTweet(tweet.QuotedTweet, null, true);
-            }
-        }
-
-        private void FormatTweet(ITweet tweet, string author, bool embed = false)
-        {
             var text = tweet.FullText;
             var entities = new List<EntityContainer>();
+            var images = new List<Embed>();
 
             if (tweet.Entities?.Urls != null)
             {
@@ -70,6 +100,22 @@ namespace TwitterStreaming
                             Start = entity.Indices[0],
                             End = entity.Indices[1],
                             Replacement = entity.ExpandedURL,
+                        });
+                    }
+                }
+            }
+
+            if (tweet.Entities.Hashtags != null)
+            {
+                foreach (var entity in tweet.Entities.Hashtags)
+                {
+                    if (!entities.Exists(x => x.Start == entity.Indices[0]))
+                    {
+                        entities.Add(new EntityContainer
+                        {
+                            Start = entity.Indices[0],
+                            End = entity.Indices[1],
+                            Replacement = $"[#{entity.Text}](https://twitter.com/hashtag/{entity.Text})"
                         });
                     }
                 }
@@ -95,20 +141,22 @@ namespace TwitterStreaming
             {
                 foreach (var entity in tweet.Entities.Medias)
                 {
-                    if (entity.MediaType is "photo" or "animated_gif")
+                    if (entity.MediaType is "photo" or "animated_gif" or "video")
                     {
-                        Embeds.Add(new
+                        images.Add(new Embed
                         {
                             url = tweet.Url,
-                            color = 1941746,
-                            image = new
+                            image = new Embed.Image
                             {
                                 url = entity.MediaURLHttps,
                             },
                         });
 
-                        // Remove the short url from text
-                        entity.ExpandedURL = "";
+                        if (entity.MediaType is "photo" or "animated_gif")
+                        {
+                            // Remove the short url from text
+                            entity.ExpandedURL = "";
+                        }
                     }
 
                     if (!entities.Exists(x => x.Start == entity.Indices[0]))
@@ -169,24 +217,27 @@ namespace TwitterStreaming
 
             text = WebUtility.HtmlDecode(text);
 
-            if (embed)
+            var embed = new Embed
             {
-                Embeds.Insert(0, new
+                url = tweet.Url,
+                color = 1941746,
+                description = text,
+                author = new Embed.Author
                 {
+                    name = author,
+                    icon_url = tweet.CreatedBy.ProfileImageUrl,
                     url = tweet.Url,
-                    color = 1941746,
-                    description = text,
-                    author = new
-                    {
-                        name = $"@{tweet.CreatedBy.ScreenName}",
-                        icon_url = tweet.CreatedBy.ProfileImageUrl,
-                    },
-                });
-            }
-            else
+                },
+            };
+
+            if (images.Any())
             {
-                Content = $"[**{author}**](<{tweet.Url}>): {text}";
+                embed.image = images[0].image;
+                images.RemoveAt(0);
             }
+
+            Embeds.Add(embed);
+            Embeds.AddRange(images);
         }
     }
 }
