@@ -30,29 +30,31 @@ namespace TwitterStreaming
 
         public PayloadDiscord(ITweet tweet)
         {
+            string author;
+
             if (tweet.RetweetedTweet != null)
             {
-                Username = $"@{tweet.RetweetedTweet.CreatedBy.ScreenName} (RT by @{tweet.CreatedBy.ScreenName})";
-
+                author = $"@{tweet.RetweetedTweet.CreatedBy.ScreenName} (RT by @{tweet.CreatedBy.ScreenName})";
                 tweet = tweet.RetweetedTweet;
             }
             else
             {
-                Username = $"@{tweet.CreatedBy.ScreenName}";
+                author = $"@{tweet.CreatedBy.ScreenName}";
             }
 
+            Username = "New Tweet";
             Avatar = tweet.CreatedBy.ProfileImageUrl;
 
             // TODO: Escape markdown
-            FormatTweet(tweet);
+            FormatTweet(tweet, author);
 
             if (tweet.QuotedTweet != null)
             {
-                FormatTweet(tweet.QuotedTweet, true);
+                FormatTweet(tweet.QuotedTweet, null, true);
             }
         }
 
-        private void FormatTweet(ITweet tweet, bool embed = false)
+        private void FormatTweet(ITweet tweet, string author, bool embed = false)
         {
             var text = tweet.FullText;
             var entities = new List<EntityContainer>();
@@ -167,7 +169,7 @@ namespace TwitterStreaming
             }
             else
             {
-                Content = $"[Tweet:](<{tweet.Url}>) {text}";
+                Content = $"[**{author}**](<{tweet.Url}>): {text}";
             }
         }
     }
