@@ -156,22 +156,27 @@ namespace TwitterStreaming
                 }
             }
 
+            // When quote-tweeting a monitored account, do not embed quoted tweet to channels that original tweeter also sends to
+            var ignoreQuoteTweet = tweet.QuotedTweet != null
+                && TwitterToChannels.TryGetValue(tweet.QuotedTweet.CreatedBy.Id, out var quoteTweetEndpoints)
+                && !endpoints.Except(quoteTweetEndpoints).Any();
+
             Log.WriteInfo($"@{tweet.CreatedBy.ScreenName} tweeted: {tweet.Url}");
 
             foreach (var hookUrl in endpoints)
             {
-                await SendWebhook(hookUrl, tweet);
+                await SendWebhook(hookUrl, tweet, ignoreQuoteTweet);
             }
         }
 
-        private async Task SendWebhook(Uri url, ITweet tweet)
+        private async Task SendWebhook(Uri url, ITweet tweet, bool ignoreQuoteTweet)
         {
             string json;
 
             if (url.Host == "discord.com")
             {
                 // If webhook target is Discord, convert it to a Discord compatible payload
-                json = JsonConvert.SerializeObject(new PayloadDiscord(tweet));
+                json = JsonConvert.SerializeObject(new PayloadDiscord(tweet, ignoreQuoteTweet));
             }
             else
             {

@@ -25,6 +25,12 @@ namespace TwitterStreaming
                 public string url { get; set; }
             }
 
+            public class Footer
+            {
+                public string text { get; set; }
+                public string icon_url { get; set; }
+            }
+
             public class Image
             {
                 public string url { get; set; }
@@ -34,6 +40,7 @@ namespace TwitterStreaming
             public int color { get; set; }
             public string description { get; set; }
             public Author author { get; set; }
+            public Footer footer { get; set; }
             public Image image { get; set; }
         }
 
@@ -49,7 +56,7 @@ namespace TwitterStreaming
         [JsonProperty("embeds")]
         public List<Embed> Embeds { get; } = new();
 
-        public PayloadDiscord(ITweet tweet)
+        public PayloadDiscord(ITweet tweet, bool ignoreQuoteTweet)
         {
             Username = "New Tweet";
 
@@ -65,7 +72,7 @@ namespace TwitterStreaming
             // TODO: Escape markdown
             FormatTweet(tweet);
 
-            if (tweet.QuotedTweet != null)
+            if (tweet.QuotedTweet != null && !ignoreQuoteTweet)
             {
                 FormatTweet(tweet.QuotedTweet);
             }
@@ -234,6 +241,15 @@ namespace TwitterStreaming
             {
                 embed.image = images[0].image;
                 images.RemoveAt(0);
+            }
+
+            if (tweet.QuotedTweet != null)
+            {
+                embed.footer = new Embed.Footer
+                {
+                    text = $"quoting @{tweet.QuotedTweet.CreatedBy.ScreenName}",
+                    icon_url = tweet.QuotedTweet.CreatedBy.ProfileImageUrl,
+                };
             }
 
             Embeds.Add(embed);
