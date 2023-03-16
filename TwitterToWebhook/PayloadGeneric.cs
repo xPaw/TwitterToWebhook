@@ -1,4 +1,4 @@
-﻿using Tweetinvi.Models;
+﻿using Tweetinvi.Models.V2;
 
 namespace TwitterStreaming
 {
@@ -10,12 +10,12 @@ namespace TwitterStreaming
         public string Avatar { get; init; }
         public object FullObject { get; init; }
 
-        public PayloadGeneric(ITweet tweet)
+        public PayloadGeneric(TweetV2 tweet, UserV2 author, string url)
         {
-            Url = tweet.Url;
-            Username = tweet.CreatedBy.ScreenName;
-            Avatar = tweet.CreatedBy.ProfileImageUrl;
-            FullObject = tweet.TweetDTO;
+            Url = url;
+            Username = author.Username;
+            Avatar = author.ProfileImageUrl;
+            FullObject = tweet;
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Newtonsoft.Json;
-using Tweetinvi.Models;
+using Tweetinvi.Models.V2;
 
 namespace TwitterStreaming
 {
@@ -56,6 +56,14 @@ namespace TwitterStreaming
         [JsonProperty("embeds")]
         public List<Embed> Embeds { get; } = new();
 
+        public PayloadDiscord(TweetV2 tweet, UserV2 author, string url, bool ignoreQuoteTweet)
+        {
+            Username = $"New Tweet by @{author.Username}";
+            Avatar = author.ProfileImageUrl;
+            Content = url;
+        }
+
+#if false
         public PayloadDiscord(ITweet tweet, bool ignoreQuoteTweet)
         {
             Username = "New Tweet";
@@ -255,5 +263,6 @@ namespace TwitterStreaming
             Embeds.Add(embed);
             Embeds.AddRange(images);
         }
+#endif
     }
 }
