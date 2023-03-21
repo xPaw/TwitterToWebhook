@@ -157,6 +157,8 @@ namespace TwitterStreaming
                     if (referencedTweet.Type == "retweeted")
                     {
                         var referencedTweetData = matchedTweetReceivedEventArgs.Includes.Tweets.FirstOrDefault(x => x.Id == referencedTweet.Id);
+                        var authorRetweeted = matchedTweetReceivedEventArgs.Includes.Users.First(user => user.Id == referencedTweetData.AuthorId);
+                        var urlRetweeted = $"https://twitter.com/{authorRetweeted.Username}/status/{referencedTweet.Id}";
 
                         if (referencedTweetData != null && TwitterToChannels.TryGetValue(referencedTweetData.AuthorId, out var retweetEndpoints))
                         {
@@ -164,10 +166,15 @@ namespace TwitterStreaming
 
                             if (!endpoints.Any())
                             {
-                                Log.WriteInfo($"@{author.Username} ({tweet.AuthorId}) retweeted @_ ({referencedTweetData.AuthorId}): ({referencedTweet.Id})");
+                                Log.WriteInfo($"@{author.Username} ({tweet.AuthorId}) retweeted @{authorRetweeted.Username} ({referencedTweetData.AuthorId}): {urlRetweeted}");
                                 return;
                             }
                         }
+
+                        author = authorRetweeted;
+                        url = urlRetweeted;
+
+                        break;
                     }
                 }
             }
